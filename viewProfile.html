@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="profile-body">
+
+  <div class="profile-card">
+    <h2>My Profile</h2>
+
+    <!-- View profile -->
+    <div id="viewProfile">
+      <p><b>Name:</b> <span id="vname">-</span></p>
+      <p><b>Address:</b> <span id="vaddress">-</span></p>
+      <p><b>Phone:</b> <span id="vphone">-</span></p>
+      <button onclick="editMyProfile()">Edit Profile</button>
+      <button onclick="goDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Edit profile (hidden by default) -->
+    <div id="editProfile" style="display:none;">
+      <input id="pname" type="text" placeholder="Full Name">
+      <input id="pphone" type="text" placeholder="Phone Number">
+      <input id="paddress" type="text" placeholder="Address">
+      <button onclick="saveEditedProfile()">Save</button>
+      <button onclick="cancelEditProfile()">Cancel</button>
+      <p id="pmsg" class="msg"></p>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      loadViewProfile();  // Show current user's profile immediately
+    });
+  </script>
+
+</body>
+</html>

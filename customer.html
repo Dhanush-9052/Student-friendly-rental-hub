@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Customer Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= TOP BAR ================= -->
+  <div class="dashboard-header">
+    <div class="dashboard-title">
+      Student Rental Hub
+    </div>
+
+    <div class="dashboard-user">
+      Welcome, <span id="currentUser"></span>
+    </div>
+  </div>
+
+  <!-- ================= NAV BAR ================= -->
+  <div class="dashboard-nav">
+    <button onclick="showItemsForRent()">Items</button>
+    <button onclick="showMyRequests()">My Requests</button>
+    <button onclick="showCustomerHistory()">Rental History</button>
+    <button onclick="openCustomerNotifications()" class="notif-btn">
+      Notifications
+      <span id="notifBadge" class="notif-badge"></span>
+    </button>
+
+    <button onclick="openProfile()">Profile</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- ================= CONTENT ================= -->
+  <div class="dashboard-content">
+    <div id="items"></div>
+    <div id="customerNotifications"></div>
+  </div>
+
+  <!-- ================= RENT MODAL (FIX) ================= -->
+  <div id="rentModal" style="display:none;">
+    <h3>Rent Item</h3>
+
+    <label>From Date</label>
+    <input type="date" id="rentFrom">
+
+    <label>To Date</label>
+    <input type="date" id="rentTo">
+
+    <p id="rentDays"></p>
+    <p id="rentAmount"></p>
+
+    <button onclick="confirmRent()">Confirm Rent</button>
+    <button onclick="closeRentModal()">Cancel</button>
+  </div>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script src="script.js"></script>
+  <script>
+  let user = localStorage.getItem("currentUser");
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+
+  let displayName = profiles[user]?.name || user;
+
+  document.getElementById("currentUser").innerText = displayName;
+</script>
+
+
+</body>
+</html>

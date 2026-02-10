@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Owner Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="dashboard-header">
+    <div class="dashboard-title">
+      Student Rental Hub
+    </div>
+
+    <div class="dashboard-user">
+      Welcome, <span id="currentUser"></span>
+    </div>
+  </div>
+
+  <!-- NAV BAR -->
+  <div class="dashboard-nav">
+    <button onclick="toggleAddForm()">Add Item</button>
+    <button onclick="showMyItems()">My Items</button>
+
+    <button onclick="openOwnerNotifications()" class="notif-btn">
+      Notifications
+      <span id="ownerNotifBadge" class="notif-badge"></span>
+    </button>
+
+    <button onclick="showOwnerHistory()">Rental History</button>
+    <button onclick="openProfile()">Profile</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="dashboard-content">
+
+    <!-- 🔵 ADD ITEM FORM -->
+    <div id="addForm" style="display:none; margin-bottom:20px;">
+
+      <h3>Add New Item</h3>
+
+      <input type="text" id="name" placeholder="Item Name">
+      <input type="number" id="price" placeholder="Rent per day">
+      <input type="text" id="deposit" placeholder="Security Deposit">
+      <input type="text" id="brand" placeholder="Brand">
+      <input type="text" id="features" placeholder="Features">
+      <input type="number" id="quantity" placeholder="Quantity" value="1">
+
+      <button onclick="addItem()">Add Item</button>
+
+    </div>
+
+
+    <!-- 🔵 EDIT ITEM FORM (SEPARATE) -->
+    <div id="editForm" style="display:none; margin-bottom:20px;">
+
+      <h3>Edit Item</h3>
+
+      <input type="text" id="edit_name" placeholder="Item Name">
+      <input type="number" id="edit_price" placeholder="Rent per day">
+      <input type="text" id="edit_deposit" placeholder="Security Deposit">
+      <input type="text" id="edit_brand" placeholder="Brand">
+      <input type="text" id="edit_features" placeholder="Features">
+      <input type="number" id="edit_quantity" placeholder="Quantity">
+
+      <button onclick="saveEditedItem()">Save Changes</button>
+      <button onclick="cancelEditItem()">Cancel</button>
+
+    </div>
+
+
+    <!-- 🔵 ITEMS LIST -->
+    <div id="myItems"></div>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="script.js"></script>
+
+  <script>
+    let user = localStorage.getItem("currentUser");
+    let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+
+    let displayName = profiles[user]?.name || user;
+
+    document.getElementById("currentUser").innerText = displayName;
+  </script>
+
+</body>
+</html>

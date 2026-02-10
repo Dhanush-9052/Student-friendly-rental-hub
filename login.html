@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <h2>Login</h2>
+
+    <input type="text" id="username" placeholder="Username"
+       onkeypress="handleLoginEnter(event)">
+
+<input type="password" id="password" placeholder="Password"
+       onkeypress="handleLoginEnter(event)">
+
+
+    <button onclick="login()">Login</button>
+
+    <p id="msg"></p>
+
+    <p>Don't have an account?</p>
+    <button onclick="goRegister()">Create Account</button>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>

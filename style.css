@@ -244,3 +244,20 @@ input {
   border: 1px solid #ddd;
   max-width: 400px;
 }
+
+.item-card {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.item-card img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+.item-details {
+  flex: 1;
+}

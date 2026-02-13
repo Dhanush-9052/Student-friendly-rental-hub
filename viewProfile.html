@@ -21,7 +21,7 @@
     <!-- Edit profile (hidden by default) -->
     <div id="editProfile" style="display:none;">
       <input id="pname" type="text" placeholder="Full Name">
-      <input id="pphone" type="text" placeholder="Phone Number">
+      <input id="pphone" type="text" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
       <input id="paddress" type="text" placeholder="Address">
       <button onclick="saveEditedProfile()">Save</button>
       <button onclick="cancelEditProfile()">Cancel</button>

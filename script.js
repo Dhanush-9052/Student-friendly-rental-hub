@@ -11,12 +11,22 @@ function logout() {
 
 // ===== Registration =====
 function register() {
+
   let user = document.getElementById("newUser").value.trim();
   let pass = document.getElementById("newPass").value.trim();
   let role = localStorage.getItem("role");
 
+  // REQUIRED FIELDS
   if (!user || !pass) {
-    document.getElementById("regMsg").innerText = "Please enter username and password!";
+    document.getElementById("regMsg").innerText =
+      "Please enter username and password!";
+    return;
+  }
+
+  // ✅ PASSWORD MIN LENGTH VALIDATION
+  if (pass.length < 6) {
+    document.getElementById("regMsg").innerText =
+      "Password must be at least 6 characters long";
     return;
   }
 
@@ -25,7 +35,8 @@ function register() {
   // Prevent duplicate username
   let exists = users.find(u => u.user === user);
   if (exists) {
-    document.getElementById("regMsg").innerText = "Username already exists!";
+    document.getElementById("regMsg").innerText =
+      "Username already exists!";
     return;
   }
 
@@ -39,18 +50,15 @@ function register() {
   users.push(newUser);
   localStorage.setItem("users", JSON.stringify(users));
 
-    // Auto login after registration
   localStorage.setItem("currentUser", user);
 
-  // Create empty profile placeholder
   let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
   profiles[user] = { completed: false };
   localStorage.setItem("profiles", JSON.stringify(profiles));
 
-  // Redirect immediately to profile filling
   window.location.href = "profile.html";
-
 }
+
 
 // ===== Login =====
 function login() {
@@ -94,10 +102,10 @@ function toggleAddForm() {
 }
 
 function addItem() {
+
   let items = JSON.parse(localStorage.getItem("items")) || [];
   let currentUser = localStorage.getItem("currentUser");
 
-  // Collect input values
   let name = document.getElementById("name").value.trim();
   let price = Number(document.getElementById("price").value.trim());
   let deposit = document.getElementById("deposit").value.trim();
@@ -105,30 +113,43 @@ function addItem() {
   let features = document.getElementById("features").value.trim();
   let quantity = parseInt(document.getElementById("quantity").value.trim()) || 1;
 
+  let imageFile = document.getElementById("image").files[0];
+
   if (!name || !price) {
     alert("Please enter at least name and price!");
     return;
   }
 
-  let item = {
-  name,
-  price,        // ✅ number
-  deposit,
-  brand,
-  features,
-  owner: currentUser,
-  quantity
-};
+  if (!imageFile) {
+    alert("Please select item image");
+    return;
+  }
 
-  items.push(item);
-  localStorage.setItem("items", JSON.stringify(items));
+  let reader = new FileReader();
 
-  alert("Item Added!");
-  showMyItems();
+  reader.onload = function(e) {
 
-  // Clear form
-  ["name","price","deposit","brand","features","quantity"].forEach(id => document.getElementById(id).value = "");
+    let item = {
+      name,
+      price,
+      deposit,
+      brand,
+      features,
+      owner: currentUser,
+      quantity,
+      image: e.target.result   // ⭐ store base64
+    };
+
+    items.push(item);
+    localStorage.setItem("items", JSON.stringify(items));
+
+    alert("Item Added!");
+    showMyItems();
+  };
+
+  reader.readAsDataURL(imageFile);
 }
+
 
 function showMyItems() {
   let items = JSON.parse(localStorage.getItem("items")) || [];
@@ -149,17 +170,25 @@ function showMyItems() {
 
   myItems.forEach((i, index) => {
     box.innerHTML += `
-      <div>
-        <b>${i.name}</b><br>
-        Rent: ₹${i.price}<br>
-        Deposit: ₹${i.deposit}<br>
-        Brand: ${i.brand}<br>
-        Features: ${i.features}<br>
-        Quantity: ${i.quantity}<br>
-        <button onclick="editItem(${index})">Edit</button>
-        <button onclick="deleteItem(${index})">Remove</button>
-      </div>
-    `;
+<div class="item-card">
+
+  <img src="${i.image}" alt="item">
+
+  <div class="item-details">
+    <b>${i.name}</b><br>
+    Rent: ₹${i.price}<br>
+    Deposit: ₹${i.deposit}<br>
+    Brand: ${i.brand}<br>
+    Features: ${i.features}<br>
+    Quantity: ${i.quantity}<br>
+
+    <button onclick="editItem(${index})">Edit</button>
+    <button onclick="deleteItem(${index})">Remove</button>
+  </div>
+
+</div>
+`;
+
   });
 }
 
@@ -222,17 +251,26 @@ function showItemsForRent() {
     let ownerName = profiles[i.owner]?.name || i.owner;
 
     box.innerHTML += `
-      <div>
-        <h3>${i.name}</h3>
-        <p>Rent: ₹${i.price}</p>
-        <p>Deposit: ₹${i.deposit || 0}</p>
-        <p>Owner: ${ownerName}</p>
-        <p>Available: ${availableQuantity} left</p>
-        <button ${availableQuantity === 0 ? "disabled" : ""} onclick="openRentCalendar(${index})">
-          Rent
-        </button>
-      </div>
-    `;
+<div class="item-card">
+
+  <img src="${i.image}" alt="item">
+
+  <div class="item-details">
+    <h3>${i.name}</h3>
+    <p>Rent: ₹${i.price}</p>
+    <p>Deposit: ₹${i.deposit || 0}</p>
+    <p>Owner: ${ownerName}</p>
+    <p>Available: ${availableQuantity} left</p>
+
+    <button ${availableQuantity === 0 ? "disabled" : ""} 
+      onclick="openRentCalendar(${index})">
+      Rent
+    </button>
+  </div>
+
+</div>
+`;
+
   });
 }
 
@@ -360,7 +398,9 @@ function cancelRequest(index) {
 
 // ===== Rental History =====
 function showOwnerHistory() {
+
   let history = JSON.parse(localStorage.getItem("rentalHistory")) || [];
+  let items = JSON.parse(localStorage.getItem("items")) || [];   // ⭐ get items to fetch image
   let currentUser = localStorage.getItem("currentUser");
   let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
 
@@ -381,35 +421,49 @@ function showOwnerHistory() {
 
   myHistory
     .slice()
-    .reverse() // ✅ latest on top
+    .reverse()
     .forEach(h => {
 
-      // ✅ get real customer name from profile
+      // ✅ customer name
       let customerName = profiles[h.customer]?.name || h.customer;
 
+      // ✅ find item to get image
+      let itemData = items.find(
+        i => i.name === h.itemName && i.owner === h.owner
+      );
+
+      let imageSrc = itemData?.image || "";
+
       box.innerHTML += `
-        <div>
-          Item: <b>${h.itemName}</b><br>
-          Customer: <b>${customerName}</b><br>
-          Status: <b>${h.status}</b>
+        <div class="item-card">
+
+          <img src="${imageSrc}" alt="item">
+
+          <div class="item-details">
+            Item: <b>${h.itemName}</b><br>
+            Customer: <b>${customerName}</b><br>
+            Status: <b>${h.status}</b>
+          </div>
+
         </div>
       `;
     });
 }
 
 
+
 function showCustomerHistory() {
 
-  checkLateReturns(); // auto late check
+  checkLateReturns();
 
   let history = JSON.parse(localStorage.getItem("rentalHistory")) || [];
+  let items = JSON.parse(localStorage.getItem("items")) || [];   // ⭐ load once
   let currentUser = localStorage.getItem("currentUser");
   let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
   let box = document.getElementById("items");
 
   box.innerHTML = "<h3>Rental History</h3>";
 
-  // Filter only this customer history
   let myHistory = [];
 
   history.forEach((h, index) => {
@@ -427,8 +481,16 @@ function showCustomerHistory() {
 
     let ownerName = profiles[h.owner]?.name || h.owner;
 
+    let itemData = items.find(
+      i => i.name === h.itemName && i.owner === h.owner
+    );
+
     box.innerHTML += `
-      <div>
+    <div class="item-card">
+
+      <img src="${itemData?.image || ''}" alt="item">
+
+      <div class="item-details">
         Item: <b>${h.itemName}</b><br>
         Owner: ${ownerName}<br>
         From: ${h.fromDate}<br>
@@ -439,24 +501,20 @@ function showCustomerHistory() {
 
         ${
           h.status === "Accepted"
-            ? `<button onclick="returnItem(${h.originalIndex})">
-                 Return
-               </button>`
-            : ""
+          ? `<button onclick="returnItem(${h.originalIndex})">Return</button>`
+          : ""
         }
 
         ${
           h.penaltyAmount
-            ? `<p style="color:red;">
-                 Penalty: ₹${h.penaltyAmount}
-               </p>`
-            : ""
+          ? `<p style="color:red;">Penalty: ₹${h.penaltyAmount}</p>`
+          : ""
         }
-
       </div>
+
+    </div>
     `;
   });
-
 }
 
 
@@ -505,7 +563,9 @@ function openCustomerNotifications() {
     box.innerHTML += "<p>No notifications.</p>";
   }
 
-  myNotes.forEach(n => {
+  // ✅ LATEST ON TOP
+  myNotes.slice().reverse().forEach(n => {
+
     box.innerHTML += `
       <div style="border:1px solid #ccc; padding:5px; margin:5px 0;">
         ${n.message}
@@ -513,13 +573,13 @@ function openCustomerNotifications() {
     `;
   });
 
-  // 🔴 MARK AS READ
   let unread = JSON.parse(localStorage.getItem("unreadNotifications")) || {};
   unread[currentUser] = 0;
   localStorage.setItem("unreadNotifications", JSON.stringify(unread));
 
-  updateNotificationBadge(); // hide bubble
+  updateNotificationBadge();
 }
+
 
 
 
@@ -578,18 +638,25 @@ function saveEditedProfile() {
   let phone = document.getElementById("pphone").value.trim();
   let address = document.getElementById("paddress").value.trim();
 
+  // REQUIRED FIELDS
   if (!name || !phone || !address) {
     document.getElementById("pmsg").innerText =
       "Name, Phone and Address are required!";
     return;
   }
 
-  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  // ✅ PHONE VALIDATION (ONLY 10 DIGITS)
+  let phoneRegex = /^[0-9]{10}$/;
 
-  // 🔴 IMPORTANT: check if profile was already completed
+  if (!phoneRegex.test(phone)) {
+    document.getElementById("pmsg").innerText =
+      "Phone number must contain exactly 10 digits (numbers only)";
+    return;
+  }
+
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
   let wasCompletedBefore = profiles[user]?.completed === true;
 
-  // Save / update profile
   profiles[user] = {
     name,
     phone,
@@ -599,7 +666,6 @@ function saveEditedProfile() {
 
   localStorage.setItem("profiles", JSON.stringify(profiles));
 
-  // 🆕 FIRST-TIME PROFILE → force login
   if (!wasCompletedBefore) {
     alert("Profile saved successfully! Please login to continue.");
     localStorage.removeItem("currentUser");
@@ -607,12 +673,12 @@ function saveEditedProfile() {
     return;
   }
 
-  // ✏️ EDIT PROFILE → stay logged in
   document.getElementById("pmsg").innerText =
     "Profile updated successfully!";
 
-  loadViewProfile(); // go back to view mode
+  loadViewProfile();
 }
+
 
 
 
@@ -952,14 +1018,28 @@ function saveEditedItem() {
   items[editItemIndex].quantity =
     parseInt(document.getElementById("edit_quantity").value) || 1;
 
-  localStorage.setItem("items", JSON.stringify(items));
+  let newImage = document.getElementById("edit_image").files[0];
 
+  if (newImage) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+      items[editItemIndex].image = e.target.result;
+      localStorage.setItem("items", JSON.stringify(items));
+      finishEdit();
+    };
+    reader.readAsDataURL(newImage);
+  } else {
+    localStorage.setItem("items", JSON.stringify(items));
+    finishEdit();
+  }
+}
+
+function finishEdit(){
   alert("Item updated!");
-
   document.getElementById("editForm").style.display = "none";
-
   showMyItems();
 }
+
 
 
 function cancelEditItem() {
@@ -1001,13 +1081,16 @@ function checkLateReturns() {
   let notes = JSON.parse(localStorage.getItem("customerNotifications")) || [];
 
   let today = new Date();
+  today.setHours(0,0,0,0);   // ⭐ remove time
 
   history.forEach(h => {
 
     if (h.status !== "Accepted") return;
 
     let endDate = new Date(h.toDate);
+    endDate.setHours(0,0,0,0);   // ⭐ remove time
 
+    // ⭐ penalty only if AFTER due date
     if (today > endDate) {
 
       let lateDays =
@@ -1016,7 +1099,6 @@ function checkLateReturns() {
       let penalty =
         200 + (lateDays * (h.totalRent / h.days));
 
-      // Avoid duplicate penalty notifications
       if (!h.penaltyApplied) {
 
         notes.push({
@@ -1031,7 +1113,6 @@ function checkLateReturns() {
         h.penaltyAmount = penalty;
       }
     }
-
   });
 
   localStorage.setItem("rentalHistory", JSON.stringify(history));

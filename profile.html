@@ -69,7 +69,7 @@
       <label style="width: 100px; text-align: right; margin-right: 10px;">
         Phone No:
       </label>
-      <input id="pphone" type="text" style="flex: 1;">
+      <input id="pphone" type="text" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     </div>
 
     <!-- 🔴 ADDRESS FIELD (REQUIRED) -->

@@ -121,14 +121,6 @@ input {
    RENT MODAL
 ========================= */
 
-#rentModal {
-  background: #ffffff;
-  padding: 20px;
-  border: 1px solid #ddd;
-  max-width: 350px;
-  margin: 40px auto;
-}
-
 /* =========================
    PROFILE PAGE
 ========================= */
@@ -260,4 +252,52 @@ input {
 
 .item-details {
   flex: 1;
+}
+
+
+.hidden {
+  display: none;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: white;
+  padding: 20px;
+  width: 350px;
+  border-radius: 8px;
+}
+
+.profile-label {
+  width: 120px;
+  text-align: right;
+  margin-right: 15px;
+  font-weight: bold;
+}
+
+.profile-card input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.profile-card input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.profile-card textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
 }

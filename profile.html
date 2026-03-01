@@ -21,7 +21,7 @@
   <div id="viewProfile" style="display: block;">
 
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         <b>Name:</b>
       </label>
       <span id="vname"
@@ -31,7 +31,7 @@
     </div>
 
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         <b>Phone No:</b>
       </label>
       <span id="vphone"
@@ -41,7 +41,7 @@
     </div>
 
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         <b>Address:</b>
       </label>
       <span id="vaddress"
@@ -59,25 +59,30 @@
   <div id="editProfile" style="display:none; margin-top:20px;">
 
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         Name:
       </label>
-      <input id="pname" type="text" style="flex: 1;">
+      <input id="pname" type="text" placeholder="Enter your full name" style="flex: 1;">
     </div>
 
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         Phone No:
       </label>
-      <input id="pphone" type="text" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <input id="pphone" 
+       type="text" 
+       maxlength="10" 
+       placeholder="Enter 10-digit mobile number"
+       oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+       style="flex: 1;">
     </div>
 
     <!-- 🔴 ADDRESS FIELD (REQUIRED) -->
     <div style="display: flex; align-items: center; margin: 10px 0;">
-      <label style="width: 100px; text-align: right; margin-right: 10px;">
+      <label class="profile-label">
         Address:
       </label>
-      <input id="paddress" type="text" style="flex: 1;">
+      <input id="paddress" type="text" placeholder="Enter your address" style="flex: 1;">
     </div>
 
     <button onclick="saveEditedProfile()" style="width: 48%; margin-top: 10px;">

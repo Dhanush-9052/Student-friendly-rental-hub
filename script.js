@@ -1,4 +1,5 @@
 let selectedRentIndex = null;
+let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
 // ===== Navigation =====
 function goRegister() {
   window.location.href = "register.html";
@@ -153,6 +154,7 @@ function addItem() {
 
 function showMyItems() {
   let items = JSON.parse(localStorage.getItem("items")) || [];
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
   let currentUser = localStorage.getItem("currentUser");
   let box = document.getElementById("myItems");
   let form = document.getElementById("addForm");
@@ -163,12 +165,28 @@ function showMyItems() {
   box.innerHTML = "<h3>Your Items</h3>";
 
   let myItems = items.filter(i => i.owner === currentUser);
+
   if (myItems.length === 0) {
     box.innerHTML += "<p>No items added yet.</p>";
     return;
   }
 
   myItems.forEach((i, index) => {
+
+    // ⭐ Calculate rating
+    let itemReviews = reviews.filter(r =>
+      r.itemName === i.name && r.owner === i.owner
+    );
+
+    let ratingHTML = "⭐ No reviews";
+
+    if (itemReviews.length > 0) {
+      let total = 0;
+      itemReviews.forEach(r => total += Number(r.rating));
+      let avg = (total / itemReviews.length).toFixed(1);
+      ratingHTML = `⭐ ${avg} (${itemReviews.length} reviews)`;
+    }
+
     box.innerHTML += `
 <div class="item-card">
 
@@ -176,19 +194,29 @@ function showMyItems() {
 
   <div class="item-details">
     <b>${i.name}</b><br>
+    <p style="font-weight:bold; margin:5px 0;">
+  <span style="color:gold;">⭐</span>
+  <span style="color:#333;">
+    ${ratingHTML.replace("⭐ ", "")}
+  </span>
+</p><br><br>
     Rent: ₹${i.price}<br>
     Deposit: ₹${i.deposit}<br>
     Brand: ${i.brand}<br>
     Features: ${i.features}<br>
-    Quantity: ${i.quantity}<br>
+    Quantity: ${i.quantity}<br><br>
 
     <button onclick="editItem(${index})">Edit</button>
+
     <button onclick="deleteItem(${index})">Remove</button>
+
+    <button onclick="showOwnerItemReviews('${i.name}', '${i.owner}')">
+      Reviews
+    </button>
   </div>
 
 </div>
 `;
-
   });
 }
 
@@ -239,6 +267,7 @@ function editItem(index) {
 // ===== Customer Functions =====
 function showItemsForRent() {
   let items = JSON.parse(localStorage.getItem("items")) || [];
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
   let box = document.getElementById("items");
   if (!box) return;
 
@@ -247,8 +276,23 @@ function showItemsForRent() {
   box.innerHTML = "<h3>Available Items</h3>";
 
   items.forEach((i, index) => {
+
     let availableQuantity = i.quantity !== undefined ? i.quantity : 1;
     let ownerName = profiles[i.owner]?.name || i.owner;
+
+    // ⭐ Calculate rating
+    let itemReviews = reviews.filter(r =>
+      r.itemName === i.name && r.owner === i.owner
+    );
+
+    let ratingHTML = "⭐ No reviews";
+
+    if (itemReviews.length > 0) {
+      let total = 0;
+      itemReviews.forEach(r => total += Number(r.rating));
+      let avg = (total / itemReviews.length).toFixed(1);
+      ratingHTML = `⭐ ${avg} (${itemReviews.length} reviews)`;
+    }
 
     box.innerHTML += `
 <div class="item-card">
@@ -257,6 +301,12 @@ function showItemsForRent() {
 
   <div class="item-details">
     <h3>${i.name}</h3>
+    <p style="font-weight:bold; margin:5px 0;">
+  <span style="color:gold;">⭐</span>
+  <span style="color:#333;">
+    ${ratingHTML.replace("⭐ ", "")}
+  </span>
+</p>
     <p>Rent: ₹${i.price}</p>
     <p>Deposit: ₹${i.deposit || 0}</p>
     <p>Owner: ${ownerName}</p>
@@ -266,11 +316,14 @@ function showItemsForRent() {
       onclick="openRentCalendar(${index})">
       Rent
     </button>
+
+    <button onclick="showItemReviews('${i.name}', '${i.owner}')">
+      View Reviews
+    </button>
   </div>
 
 </div>
 `;
-
   });
 }
 
@@ -506,6 +559,12 @@ function showCustomerHistory() {
         }
 
         ${
+          h.status === "Returned"
+          ? getReviewButton(h)
+          : ""
+        }
+
+        ${
           h.penaltyAmount
           ? `<p style="color:red;">Penalty: ₹${h.penaltyAmount}</p>`
           : ""
@@ -584,80 +643,83 @@ function openCustomerNotifications() {
 
 
 function openProfile() {
-  window.location.href = "viewProfile.html";
-}
-
-
-if (document.getElementById("vname")) loadViewProfile();
-
-// ===== Profile View & Edit =====
-function loadViewProfile() {
 
   let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
-  let user = localStorage.getItem("currentUser");
+  let currentUser = localStorage.getItem("currentUser");
 
-  if (!user) return;
+  // Detect which page container exists
+  let box =
+    document.getElementById("items") ||
+    document.getElementById("myItems");
 
-  // 🔴 PROFILE NOT COMPLETED → FORCE EDIT MODE
-  if (!profiles[user] || profiles[user].completed !== true) {
+  if (!box) return;
 
-    document.getElementById("viewProfile").style.display = "none";
-    document.getElementById("editProfile").style.display = "block";
+  let user = profiles[currentUser];
 
-    // Clear inputs for first-time entry
-    if (document.getElementById("pname")) document.getElementById("pname").value = "";
-    if (document.getElementById("pphone")) document.getElementById("pphone").value = "";
-    if (document.getElementById("paddress")) document.getElementById("paddress").value = "";
-
-    return;
-  }
-
-  // ✅ PROFILE EXISTS → VIEW MODE
-  document.getElementById("vname").innerText = profiles[user].name;
-  if (document.getElementById("vphone"))
-    document.getElementById("vphone").innerText = profiles[user].phone;
-  if (document.getElementById("vaddress"))
-    document.getElementById("vaddress").innerText = profiles[user].address;
-
-  document.getElementById("viewProfile").style.display = "block";
-  document.getElementById("editProfile").style.display = "none";
-}
-
-
-// Save edited profile
-function saveEditedProfile() {
-
-  let user = localStorage.getItem("currentUser");
   if (!user) {
-    alert("Session expired. Please login again.");
-    window.location.href = "login.html";
+    box.innerHTML = "<p>Profile not found.</p>";
     return;
   }
 
-  let name = document.getElementById("pname").value.trim();
-  let phone = document.getElementById("pphone").value.trim();
-  let address = document.getElementById("paddress").value.trim();
+  box.innerHTML = `
+    <h3>My Profile</h3>
 
-  // REQUIRED FIELDS
+    <p><b>Name:</b> ${user.name}</p>
+    <p><b>Address:</b> ${user.address}</p>
+    <p><b>Phone:</b> ${user.phone}</p>
+
+    <br>
+    <button onclick="editProfileInDashboard()">Edit Profile</button>
+  `;
+}
+
+function editProfileInDashboard() {
+
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  let currentUser = localStorage.getItem("currentUser");
+  let box =
+  document.getElementById("items") ||
+  document.getElementById("myItems");
+  let user = profiles[currentUser];
+
+  box.innerHTML = `
+    <h3>Edit Profile</h3>
+
+    <input id="editName" type="text" value="${user.name}" placeholder="Name"><br><br>
+    <input id="editPhone" 
+       type="text" 
+       value="${user.phone || ''}" 
+       maxlength="10"
+       placeholder="Enter 10-digit mobile number"
+       oninput="this.value=this.value.replace(/[^0-9]/g,'')"><br><br>
+    <input id="editAddress" type="text" value="${user.address}" placeholder="Address"><br><br>
+
+    <button onclick="saveProfileFromDashboard()">Save</button>
+    <button onclick="openProfile()">Cancel</button>
+  `;
+}
+
+
+function saveProfileFromDashboard() {
+
+  let name = document.getElementById("editName").value.trim();
+  let phone = document.getElementById("editPhone").value.trim();
+  let address = document.getElementById("editAddress").value.trim();
+
   if (!name || !phone || !address) {
-    document.getElementById("pmsg").innerText =
-      "Name, Phone and Address are required!";
+    alert("All fields are required");
     return;
   }
 
-  // ✅ PHONE VALIDATION (ONLY 10 DIGITS)
-  let phoneRegex = /^[0-9]{10}$/;
-
-  if (!phoneRegex.test(phone)) {
-    document.getElementById("pmsg").innerText =
-      "Phone number must contain exactly 10 digits (numbers only)";
+  if (!/^[0-9]{10}$/.test(phone)) {
+    alert("Phone must be 10 digits");
     return;
   }
 
   let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
-  let wasCompletedBefore = profiles[user]?.completed === true;
+  let currentUser = localStorage.getItem("currentUser");
 
-  profiles[user] = {
+  profiles[currentUser] = {
     name,
     phone,
     address,
@@ -666,21 +728,13 @@ function saveEditedProfile() {
 
   localStorage.setItem("profiles", JSON.stringify(profiles));
 
-  if (!wasCompletedBefore) {
-    alert("Profile saved successfully! Please login to continue.");
-    localStorage.removeItem("currentUser");
-    window.location.href = "login.html";
-    return;
-  }
+  alert("Profile updated successfully!");
 
-  document.getElementById("pmsg").innerText =
-    "Profile updated successfully!";
-
-  loadViewProfile();
+  openProfile();
 }
 
 
-
+if (document.getElementById("vname")) loadViewProfile();
 
 
 
@@ -813,7 +867,7 @@ function openRentCalendar(index) {
   document.getElementById("rentDays").innerText = "";
   document.getElementById("rentAmount").innerText = "";
 
-  document.getElementById("rentModal").style.display = "block";
+  document.getElementById("rentModal").style.display = "flex";
 }
 
 
@@ -957,12 +1011,19 @@ function editMyProfile() {
 
   if (!profiles[user]) return;
 
-  document.getElementById("pname").value = profiles[user].name || "";
-  if (document.getElementById("pphone"))
-    document.getElementById("pphone").value = profiles[user].phone || "";
-  if (document.getElementById("paddress"))
-    document.getElementById("paddress").value = profiles[user].address || "";
+  // Name
+  document.getElementById("pname").value =
+    (profiles[user].name || "").trim();
 
+  // Phone (FIXED – trims spaces so placeholder works)
+  document.getElementById("pphone").value =
+    (profiles[user].phone || "").trim();
+
+  // Address
+  document.getElementById("paddress").value =
+    (profiles[user].address || "").trim();
+
+  // Switch to edit mode
   document.getElementById("viewProfile").style.display = "none";
   document.getElementById("editProfile").style.display = "block";
 }
@@ -1117,4 +1178,317 @@ function checkLateReturns() {
 
   localStorage.setItem("rentalHistory", JSON.stringify(history));
   localStorage.setItem("customerNotifications", JSON.stringify(notes));
+}
+
+
+function getReviewButton(historyItem) {
+
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+  let currentUser = localStorage.getItem("currentUser");
+
+  let existing = reviews.find(r =>
+    r.customer === currentUser &&
+    r.itemName === historyItem.itemName &&
+    r.owner === historyItem.owner
+  );
+
+  if (existing) {
+    return `
+      <button onclick="openReviewForm('${historyItem.itemName}', '${historyItem.owner}', true)">
+        Edit Review
+      </button>
+
+      <button onclick="deleteReview('${historyItem.itemName}', '${historyItem.owner}')"
+        style="background:#ff4d4d; border-color:#ff4d4d; color:white;">
+        Delete Review
+      </button>
+    `;
+  } else {
+    return `
+      <button onclick="openReviewForm('${historyItem.itemName}', '${historyItem.owner}', false)">
+        Give Review
+      </button>
+    `;
+  }
+}
+
+let reviewItemName = null;
+let reviewOwner = null;
+let editMode = false;
+
+function openReviewForm(itemName, owner, isEdit = false) {
+
+  reviewItemName = itemName;   // ✅ FIX
+  reviewOwner = owner;         // ✅ FIX
+
+  let currentUser = localStorage.getItem("currentUser");
+  let modal = document.getElementById("reviewModal");
+
+  if (isEdit) {
+    let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+
+    let existing = reviews.find(r =>
+      r.itemName === itemName &&
+      r.owner === owner &&
+      r.customer === currentUser
+    );
+
+    if (existing) {
+      document.getElementById("reviewRating").value = existing.rating;
+      document.getElementById("reviewComment").value = existing.comment;
+    }
+  } else {
+    document.getElementById("reviewRating").value = "";
+    document.getElementById("reviewComment").value = "";
+  }
+
+  modal.style.display = "flex";
+}
+
+function saveReview() {
+
+  let rating = Number(document.getElementById("reviewRating").value);
+  let comment = document.getElementById("reviewComment").value.trim();
+  let currentUser = localStorage.getItem("currentUser");
+
+  if (!rating || rating < 1 || rating > 5) {
+    alert("Rating must be between 1 and 5");
+    return;
+  }
+
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+
+  let existingIndex = reviews.findIndex(r =>
+    r.customer === currentUser &&
+    r.itemName === reviewItemName &&
+    r.owner === reviewOwner
+  );
+
+  if (existingIndex !== -1) {
+    // EDIT
+    reviews[existingIndex].rating = rating;
+    reviews[existingIndex].comment = comment;
+  } else {
+    // NEW
+    reviews.push({
+      itemName: reviewItemName,
+      owner: reviewOwner,
+      customer: currentUser,
+      rating: rating,
+      comment: comment,
+      date: new Date().toLocaleDateString()
+    });
+  }
+
+  localStorage.setItem("reviews", JSON.stringify(reviews));
+
+  alert("Review saved successfully!");
+  closeReviewModal();
+  showCustomerHistory();
+}
+
+function closeReviewModal() {
+  document.getElementById("reviewModal").style.display = "none";
+}
+
+function showItemReviews(itemName, owner) {
+
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  let box = document.getElementById("items");
+
+  box.innerHTML = `<h3>Reviews for ${itemName}</h3>`;
+
+  let itemReviews = reviews.filter(r =>
+    r.itemName === itemName && r.owner === owner
+  );
+
+  if (itemReviews.length === 0) {
+    box.innerHTML += "<p>No reviews yet.</p>";
+  } else {
+    itemReviews.forEach(r => {
+
+      let customerName = profiles[r.customer]?.name || r.customer;
+
+      box.innerHTML += `
+        <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+          <b>${customerName}</b><br>
+          Rating: ${r.rating}/5<br>
+          Comment: ${r.comment}<br>
+          Date: ${r.date}
+        </div>
+      `;
+    });
+  }
+
+  box.innerHTML += `<br><button onclick="showItemsForRent()">Back</button>`;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Hide review modal on page load
+  let reviewModal = document.getElementById("reviewModal");
+  if (reviewModal) {
+    reviewModal.style.display = "none";
+  }
+
+  // Hide rent modal on page load
+  let rentModal = document.getElementById("rentModal");
+  if (rentModal) {
+    rentModal.style.display = "none";
+  }
+
+});
+
+function deleteReview(itemName, owner) {
+
+  let confirmDelete = confirm("Are you sure you want to delete this review?");
+  if (!confirmDelete) return;
+
+  let currentUser = localStorage.getItem("currentUser");
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+
+  reviews = reviews.filter(r =>
+    !(r.customer === currentUser &&
+      r.itemName === itemName &&
+      r.owner === owner)
+  );
+
+  localStorage.setItem("reviews", JSON.stringify(reviews));
+
+  alert("Review deleted successfully!");
+  showCustomerHistory();
+}
+
+function showOwnerItemReviews(itemName, owner) {
+
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  let box = document.getElementById("myItems");
+
+  box.innerHTML = `<h3>Reviews for ${itemName}</h3>`;
+
+  let itemReviews = reviews.filter(r =>
+    r.itemName === itemName && r.owner === owner
+  );
+
+  if (itemReviews.length === 0) {
+    box.innerHTML += "<p>No reviews yet.</p>";
+  } else {
+
+    let total = 0;
+
+    itemReviews.forEach(r => {
+
+      total += Number(r.rating);
+
+      let customerName = profiles[r.customer]?.name || r.customer;
+
+      box.innerHTML += `
+        <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+          <b>${customerName}</b><br>
+          Rating: ${r.rating}/5<br>
+          Comment: ${r.comment}<br>
+          Date: ${r.date}
+        </div>
+      `;
+    });
+
+    let avg = (total / itemReviews.length).toFixed(1);
+
+    box.innerHTML = `
+      <h3>Reviews for ${itemName}</h3>
+      <p><b>Average Rating:</b> ${avg} ⭐ 
+      (${itemReviews.length} reviews)</p>
+    ` + box.innerHTML.split("</h3>")[1];
+  }
+
+  box.innerHTML += `
+    <br>
+    <button onclick="showMyItems()">Back</button>
+  `;
+}
+
+function getItemRating(itemName, owner) {
+
+  let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+
+  let itemReviews = reviews.filter(r =>
+    r.itemName === itemName && r.owner === owner
+  );
+
+  if (itemReviews.length === 0) {
+    return "⭐ No reviews";
+  }
+
+  let total = 0;
+
+  itemReviews.forEach(r => {
+    total += Number(r.rating);
+  });
+
+  let avg = (total / itemReviews.length).toFixed(1);
+
+  return `⭐ ${avg} (${itemReviews.length} reviews)`;
+}
+
+function saveEditedProfile() {
+
+  let name = document.getElementById("pname").value.trim();
+  let phone = document.getElementById("pphone").value.trim();
+  let address = document.getElementById("paddress").value.trim();
+
+  if (!name || !phone || !address) {
+    document.getElementById("pmsg").innerText = "All fields are required!";
+    return;
+  }
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+    document.getElementById("pmsg").innerText = "Phone must be 10 digits!";
+    return;
+  }
+
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  let currentUser = localStorage.getItem("currentUser");
+
+  profiles[currentUser] = {
+    name,
+    phone,
+    address,
+    completed: true
+  };
+
+  localStorage.setItem("profiles", JSON.stringify(profiles));
+
+  document.getElementById("pmsg").innerText = "Profile saved successfully!";
+
+  setTimeout(() => {
+    goDashboard();   // redirect to customer/owner dashboard
+  }, 1000);
+}
+
+function loadViewProfile() {
+
+  let currentUser = localStorage.getItem("currentUser");
+  let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+  let user = profiles[currentUser];
+
+  if (!user) return;
+
+  // ⭐ IF PROFILE NOT COMPLETED → FORCE EDIT MODE
+  if (!user.completed) {
+
+    document.getElementById("viewProfile").style.display = "none";
+    document.getElementById("editProfile").style.display = "block";
+
+    return;
+  }
+
+  // Otherwise show profile normally
+  document.getElementById("vname").innerText = user.name;
+  document.getElementById("vphone").innerText = user.phone;
+  document.getElementById("vaddress").innerText = user.address;
+
+  document.getElementById("viewProfile").style.display = "block";
+  document.getElementById("editProfile").style.display = "none";
 }
